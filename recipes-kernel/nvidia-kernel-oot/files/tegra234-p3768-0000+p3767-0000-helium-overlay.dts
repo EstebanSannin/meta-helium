@@ -1,0 +1,79 @@
+// SPDX-License-Identifier: MIT
+/*
+ * PCB Arts Helium carrier deltas on top of the Jetson Orin NX/Nano devkit
+ * device tree (tegra234-p3768-0000+p3767-0000-nv-super.dtb).
+ * Reconstructed from the live device tree of a Helium running the
+ * PCB Arts JetPack 36.5.0 image.
+ */
+/dts-v1/;
+/plugin/;
+
+/ {
+	fragment@0 {
+		target-path = "/";
+		__overlay__ {
+			model = "PCB Arts Helium";
+		};
+	};
+
+	/* No FUSB301 Type-C controller on Helium; USB-C port is host by default. */
+	fragment@1 {
+		target-path = "/bus@0/i2c@c240000/fusb301@25";
+		__overlay__ {
+			status = "disabled";
+		};
+	};
+
+	fragment@2 {
+		target-path = "/bus@0/padctl@3520000/ports/usb2-0";
+		__overlay__ {
+			mode = "host";
+			usb-role-switch;
+			role-switch-default-mode = "peripheral";
+		};
+	};
+
+	/* External RTC MCP7940NT on I2C1 (gen2_i2c). */
+	fragment@3 {
+		target-path = "/bus@0/i2c@c240000";
+		__overlay__ {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			rtc@6f {
+				compatible = "microchip,mcp7940x";
+				reg = <0x6f>;
+				status = "okay";
+			};
+		};
+	};
+
+	/* No SD card slot. */
+	fragment@4 {
+		target-path = "/bus@0/mmc@3400000";
+		__overlay__ {
+			status = "disabled";
+		};
+	};
+
+	/* gbe-uphy-config-9: C7 keeps GBE lane 0, C9 gets GBE lane 1 (LAN7430). */
+	fragment@5 {
+		target-path = "/bus@0/pcie@141e0000";
+		__overlay__ {
+			num-lanes = <1>;
+			phys = <&p2u_gbe_0>;
+			phy-names = "p2u-0";
+		};
+	};
+
+	fragment@6 {
+		target-path = "/bus@0/pcie@140c0000";
+		__overlay__ {
+			status = "okay";
+			num-lanes = <1>;
+			phys = <&p2u_gbe_1>;
+			phy-names = "p2u-0";
+			vddio-pex-ctl-supply = <&vdd_1v8_ao>;
+		};
+	};
+};
