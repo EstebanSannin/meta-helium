@@ -1,0 +1,153 @@
+// SPDX-License-Identifier: MIT
+/*
+ * PCB Arts Helium: MAX96724 test pattern source wired to the Tegra camera
+ * stack (VI / NVCSI), for testing capture without a GMSL camera. Pairs with
+ * the helium_max96724_tpg driver. Merged into the Helium DTB only with
+ * HELIUM_CAMERA_TPG = "1": it claims the deserializer (i2c-2, 0x27).
+ *
+ * The driver runs the MAX96724 in 4x2 mode, so every deserializer PHY
+ * carries the pattern on 2 lanes. On the Helium those reach Tegra CSI C and
+ * D (CSI A/B saw nothing); this captures from CSI C, 2 lanes, 1200 Mbps/lane,
+ * 1920x1080 RGB888 at 30 fps (75 MHz pattern clock).
+ */
+/dts-v1/;
+/plugin/;
+
+/ {
+	fragment@0 {
+		target-path = "/tegra-capture-vi";
+		__overlay__ {
+			num-channels = <1>;
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				port@0 {
+					reg = <0>;
+					helium_tpg_vi_in0: endpoint {
+						port-index = <2>;
+						bus-width = <2>;
+						remote-endpoint = <&helium_tpg_csi_out0>;
+					};
+				};
+			};
+		};
+	};
+
+	fragment@1 {
+		target-path = "/bus@0/host1x@13e00000/nvcsi@15a00000";
+		__overlay__ {
+			num-channels = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			channel@0 {
+				reg = <0>;
+				ports {
+					#address-cells = <1>;
+					#size-cells = <0>;
+					port@0 {
+						reg = <0>;
+						helium_tpg_csi_in0: endpoint@0 {
+							port-index = <2>;
+							bus-width = <2>;
+							remote-endpoint = <&helium_tpg_out0>;
+						};
+					};
+					port@1 {
+						reg = <1>;
+						helium_tpg_csi_out0: endpoint@1 {
+							remote-endpoint = <&helium_tpg_vi_in0>;
+						};
+					};
+				};
+			};
+		};
+	};
+
+	/* CAM_I2C */
+	fragment@2 {
+		target-path = "/bus@0/i2c@3180000";
+		__overlay__ {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			max96724_tpg@27 {
+				compatible = "pcbarts,max96724-tpg";
+				reg = <0x27>;
+				devnode = "video0";
+				physical_w = "1.0";
+				physical_h = "1.0";
+				sensor_model = "max96724_tpg";
+				use_sensor_mode_id = "true";
+				mode0 {
+					num_lanes = "2";
+					tegra_sinterface = "serial_c";
+					phy_mode = "DPHY";
+					discontinuous_clk = "no";
+					dpcm_enable = "false";
+					cil_settletime = "0";
+					lane_polarity = "0";
+					active_w = "1920";
+					active_h = "1080";
+					pixel_t = "rgb_rgb88824";
+					csi_pixel_bit_depth = "24";
+					readout_orientation = "0";
+					line_length = "2200";
+					inherent_gain = "1";
+					pix_clk_hz = "75000000";
+					/* 1200 Mbps x 2 lanes / 24 bpp */
+					serdes_pix_clk_hz = "100000000";
+					gain_factor = "1";
+					min_gain_val = "1";
+					max_gain_val = "1";
+					step_gain_val = "1";
+					default_gain = "1";
+					min_hdr_ratio = "1";
+					max_hdr_ratio = "1";
+					framerate_factor = "1000000";
+					min_framerate = "1000000";
+					max_framerate = "30000000";
+					step_framerate = "1";
+					default_framerate = "30000000";
+					exposure_factor = "1000000";
+					min_exp_time = "30";
+					max_exp_time = "33000";
+					step_exp_time = "1";
+					default_exp_time = "33000";
+					embedded_metadata_height = "0";
+				};
+				ports {
+					#address-cells = <1>;
+					#size-cells = <0>;
+					port@0 {
+						reg = <0>;
+						helium_tpg_out0: endpoint {
+							port-index = <2>;
+							bus-width = <2>;
+							remote-endpoint = <&helium_tpg_csi_in0>;
+						};
+					};
+				};
+			};
+		};
+	};
+
+	/* The VI driver's power-on dereferences the camera platform device. */
+	fragment@3 {
+		target-path = "/";
+		__overlay__ {
+			tegra-camera-platform {
+				compatible = "nvidia, tegra-camera-platform";
+				modules {
+					module0 {
+						badge = "helium_max96724_tpg";
+						position = "front";
+						orientation = "1";
+						drivernode0 {
+							pcl_id = "v4l2_sensor";
+							sysfs-device-tree = "/sys/firmware/devicetree/base/bus@0/i2c@3180000/max96724_tpg@27";
+						};
+					};
+				};
+			};
+		};
+	};
+};

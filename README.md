@@ -140,9 +140,39 @@ Tested on a Helium HOX2 on 2026-10-15.
 | GPU (`nvgpu`) and Docker `nvidia` runtime | ✅ present. CUDA workloads not tested yet |
 | IMU ICM-42670-P (I2C1 0x69) | ✅ answers, WHO_AM_I `0x67`. ⏳ no device-tree node, so no driver bound |
 | ATSHA204A (I2C1 0x64) | ✅ answers. ⏳ no device-tree node, so no driver bound |
-| GMSL2 MAX96724 (CAM_I2C = i2c-2, 0x27) | ✅ answers, ID `0xA2`, PoC on at 12 V (PCB Arts defaults). ⏳ no camera driver or device tree |
+| GMSL2 MAX96724 (CAM_I2C = i2c-2, 0x27) | ✅ answers, ID `0xA2`, PoC on at 12 V (PCB Arts defaults). ✅ test pattern captured over MIPI CSI with V4L2 (`HELIUM_CAMERA_TPG = "1"`, see below). ⏳ no camera driver |
 | Fan control, LAN743X EEPROM MAC setup (PCB Arts first-boot scripts) | ⏳ not ported |
 | OP-TEE | ⚠️ `optee` cannot register with `arm_ffa` on this R39 build |
+
+## Camera path test without a camera
+
+`HELIUM_CAMERA_TPG = "1"` in `local.conf` merges
+`tegra234-p3767-helium-camera-tpg-overlay.dts` into the Helium DTB and installs
+`helium-max96724-tpg`, a tegracam driver that makes the MAX96724 output its
+internal video pattern (1920x1080 RGB888, 30 fps) over MIPI CSI. It claims the
+deserializer, so leave it off when a real camera driver is used.
+
+```
+docker run --rm --privileged -v /dev:/dev -v /tmp:/out debian:trixie-slim sh -c \
+  'apt-get update && apt-get install -y v4l-utils && \
+   v4l2-ctl -d /dev/video0 --stream-mmap --stream-count=10 --stream-to=/out/frame.raw'
+```
+
+Each frame is 1920x1080 RGBA (`AB24`, 8 294 400 bytes). Module parameters:
+`pattern` (0 checkerboard, 1 gradient), `quad_2lane`, `csi_port`, `lane_map`,
+`lane_polarity`, `dpll_mbps` (see `modinfo helium_max96724_tpg`).
+
+The driver runs the deserializer in 4x2 mode (2 lanes per PHY, every PHY
+carries the pattern) and the DT captures 2 lanes on Tegra CSI C. Findings:
+
+- Only Tegra CSI C and D receive data; CSI A and B see nothing in any mode.
+- The upstream staging max96712 sequence leaves pipe 0 routed to PHY0, which is
+  not a port master in 2x4 mode, so nothing leaves the chip. The routing (pipe
+  to PHY, VC/DT maps for pixels and FS/FE) comes from ADI's maxim-serdes
+  max96724 driver.
+- 4 lanes (deserializer port B → Tegra CSI C x4) still fails: frames arrive
+  with payload CRC errors (`CSI_FAULT_PD_CRC_ERR`) at every lane map and rate
+  tried.
 
 ## Debugging without the H-DBG adapter
 
