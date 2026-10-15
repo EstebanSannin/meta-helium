@@ -1,0 +1,7 @@
+# Helium port "Ethernet 2": LAN7430 on the carrier, PCIe C9 -> ethernet1.
+[Match]
+Path=platform-140c0000.pcie-pci-0009:01:00.0
+
+[Link]
+Name=ethernet1
+MACAddressPolicy=none

@@ -1,0 +1,15 @@
+[Unit]
+Description=Helium fan enable (GPIO PAC.06)
+Documentation=https://github.com/EstebanSannin/meta-helium
+# The fan's power enable must be high before nvfancontrol drives the PWM.
+Before=nvfancontrol.service
+
+[Service]
+Type=simple
+# gpioset (libgpiod v2) holds the line as long as it runs.
+ExecStart=/usr/bin/gpioset --consumer helium-fan PAC.06=1
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,10 @@
+# Helium port "Ethernet 1": RTL8111 on the module, PCIe C8 -> ethernet0.
+# The kernel's ethN names follow probe order, which differs between boots
+# with two PCIe NICs, so name the port by its PCIe path. ethernet0/ethernet1
+# follow Torizon's convention (its NetworkManager profiles network0/network1).
+[Match]
+Path=platform-140a0000.pcie-pci-0008:01:00.0
+
+[Link]
+Name=ethernet0
+MACAddressPolicy=none
