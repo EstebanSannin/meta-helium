@@ -134,7 +134,7 @@ Tested on a Helium HOX2 on 2026-10-15.
 | Ethernet 2: LAN7430 on PCIe C9 (`lan743x`, `ethernet1`) | ✅ 1 Gb/s, DHCP |
 | Ethernet 1: RTL8111 on PCIe C8 (`nv-kernel-module-r8168`, `ethernet0`) | ✅ 1 Gb/s full duplex, DHCP, iperf3 941 Mbit/s both directions |
 | Ethernet names | ✅ `helium-net-names` pins `ethernet0` (port 1) and `ethernet1` (port 2) by PCIe path, matching Torizon's NetworkManager profiles. Without it the kernel's `eth0`/`eth1` swap between boots |
-| NVMe (PCIe C4) | ⚠️ works (read 915 MB/s, write 2.0 GB/s), but occasional `I/O tag … timeout` messages that the kernel recovers from |
+| NVMe (PCIe C4) | ✅ read 915 MB/s, write 2.0 GB/s; 10-minute random read/write stress without errors |
 | USB-C | ✅ default role `device`. Switch with `echo host > /sys/class/usb_role/usb2-0-role-switch/role` |
 | RTC MCP7940 (`rtc-ds1307`, `/dev/rtc2`) | ⚠️ driver bound, but the time is invalid until it has been set once (`hwclock -w`). Keeping time needs the coin cell (not fitted from the factory) |
 | CAN (`mttcan`) | ✅ interface present |
