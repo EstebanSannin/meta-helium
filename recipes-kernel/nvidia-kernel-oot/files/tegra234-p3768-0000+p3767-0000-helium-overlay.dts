@@ -53,6 +53,13 @@
 				reg = <0x6f>;
 				status = "okay";
 			};
+
+			/* ATSHA204A crypto authentication chip (also provides a hwrng). */
+			crypto@64 {
+				compatible = "atmel,atsha204a";
+				reg = <0x64>;
+				status = "okay";
+			};
 		};
 	};
 
