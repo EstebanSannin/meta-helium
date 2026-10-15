@@ -6,8 +6,9 @@ Before=nvfancontrol.service
 
 [Service]
 Type=simple
-# gpioset (libgpiod v2) holds the line as long as it runs.
-ExecStart=/usr/bin/gpioset --consumer helium-fan PAC.06=1
+# The image has libgpiod v1: gpiofind maps the line name to "<chip> <offset>",
+# and gpioset --mode=signal holds the line until the service stops.
+ExecStart=/bin/sh -c 'exec /usr/bin/gpioset --mode=signal $(/usr/bin/gpiofind PAC.06)=1'
 Restart=on-failure
 RestartSec=2
 

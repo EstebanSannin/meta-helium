@@ -131,18 +131,27 @@ Tested on a Helium HOX2 on 2026-10-15.
 | Area | Status |
 |---|---|
 | Boot chain (QSPI firmware, Torizon UEFI, OSTree kernel and DTB, NVMe rootfs) | ✅ |
-| Ethernet 2: LAN7430 on PCIe C9 (`lan743x`, `eth1`) | ✅ 1 Gb/s, DHCP |
-| Ethernet 1: RTL8111 on PCIe C8 (`nv-kernel-module-r8168`) | ✅ driver binds (`eth0`); boot is 27 s (was 5 min waiting for the network). Link with a cable on port 1 not yet tested |
-| NVMe (PCIe C4) | ✅ |
+| Ethernet 2: LAN7430 on PCIe C9 (`lan743x`, `ethernet1`) | ✅ 1 Gb/s, DHCP |
+| Ethernet 1: RTL8111 on PCIe C8 (`nv-kernel-module-r8168`, `ethernet0`) | ✅ 1 Gb/s full duplex, DHCP, iperf3 941 Mbit/s both directions |
+| Ethernet names | ✅ `helium-net-names` pins `ethernet0` (port 1) and `ethernet1` (port 2) by PCIe path, matching Torizon's NetworkManager profiles. Without it the kernel's `eth0`/`eth1` swap between boots |
+| NVMe (PCIe C4) | ⚠️ works (read 915 MB/s, write 2.0 GB/s), but occasional `I/O tag … timeout` messages that the kernel recovers from |
 | USB-C | ✅ default role `device`. Switch with `echo host > /sys/class/usb_role/usb2-0-role-switch/role` |
 | RTC MCP7940 (`rtc-ds1307`, `/dev/rtc2`) | ⚠️ driver bound, but the time is invalid until it has been set once (`hwclock -w`). Keeping time needs the coin cell (not fitted from the factory) |
 | CAN (`mttcan`) | ✅ interface present |
 | GPU (`nvgpu`) and Docker `nvidia` runtime | ✅ present. CUDA workloads not tested yet |
 | IMU ICM-42670-P (I2C1 0x69) | ✅ answers, WHO_AM_I `0x67`. ⏳ no device-tree node, so no driver bound |
-| ATSHA204A (I2C1 0x64) | ✅ answers. ⏳ no device-tree node, so no driver bound |
+| ATSHA204A (I2C1 0x64) | ⚠️ answers; device-tree node present. The `atmel-sha204a` driver refuses the chip because its configuration and OTP zones are unlocked (factory state). Locking is permanent, so it is left to the product's provisioning |
 | GMSL2 MAX96724 (CAM_I2C = i2c-2, 0x27) | ✅ answers, ID `0xA2`, PoC on at 12 V (PCB Arts defaults). ✅ test pattern captured over MIPI CSI with V4L2 (`HELIUM_CAMERA_TPG = "1"`, see below). ⏳ no camera driver |
-| Fan control, LAN743X EEPROM MAC setup (PCB Arts first-boot scripts) | ⏳ not ported |
-| OP-TEE | ⚠️ `optee` cannot register with `arm_ffa` on this R39 build |
+| Fan | ✅ PAC.06 output-high in the MB1 pinmux, `helium-fan-enable.service` holds the line, PCB Arts' `nvfancontrol` profile. 2650–2850 RPM at idle. |
+| LAN743X EEPROM MAC setup (PCB Arts first-boot script) | ⏳ not ported |
+| CPU clock | ✅ up to 1.5 GHz in the default 40 W mode (NVIDIA profile), 2.0 GHz in MAXN_SUPER (`nvpmodel -m 0`) |
+| OP-TEE | ✅ runs over SMC (`/dev/tee0`); the `arm_ffa` message is informational. fTPM needs NVIDIA EKB provisioning |
+
+### Device-tree updates
+
+The Helium DTB ships in the OSTree deployment, so OS updates and rollbacks
+carry device-tree changes. UEFI applies its overlays (memory carveouts, OP-TEE)
+and fixups to the deployed DTB as it does to the flashed one.
 
 ## Camera path test without a camera
 
