@@ -16,7 +16,7 @@
 		};
 	};
 
-	/* No FUSB301 Type-C controller on Helium; USB-C port is host by default. */
+	/* No FUSB301 Type-C controller on Helium. */
 	fragment@1 {
 		target-path = "/bus@0/i2c@c240000/fusb301@25";
 		__overlay__ {
@@ -24,10 +24,18 @@
 		};
 	};
 
+	/*
+	 * Without the FUSB301 nothing drives the USB-C role, so default the port
+	 * to device mode: initrd-flash needs the USB gadget (mass storage) on it.
+	 * The padctl driver only honours usb-role-switch/role-switch-default-mode
+	 * in "otg"/"peripheral" mode ("host" makes the port host-only). Switch at
+	 * runtime with /sys/class/usb_role/<port>/role. PCB Arts' runtime overlay
+	 * uses mode = "host", but they flash with the stock "otg" devkit DTB.
+	 */
 	fragment@2 {
 		target-path = "/bus@0/padctl@3520000/ports/usb2-0";
 		__overlay__ {
-			mode = "host";
+			mode = "otg";
 			usb-role-switch;
 			role-switch-default-mode = "peripheral";
 		};
