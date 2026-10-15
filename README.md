@@ -131,15 +131,16 @@ Tested on a Helium HOX2 on 2026-10-15.
 | Area | Status |
 |---|---|
 | Boot chain (QSPI firmware, Torizon UEFI, OSTree kernel and DTB, NVMe rootfs) | ✅ |
-| Ethernet 2: LAN7430 on PCIe C9 (`lan743x`) | ✅ 1 Gb/s, DHCP |
-| Ethernet 1: RTL8111 on PCIe C8 (`nv-kernel-module-r8168`) | ⏳ driver in the image. With it, the board was on SSH ~50 s after flashing (before: 4 min 43 s waiting for the network). Link not yet tested with a cable on port 1 |
+| Ethernet 2: LAN7430 on PCIe C9 (`lan743x`, `eth1`) | ✅ 1 Gb/s, DHCP |
+| Ethernet 1: RTL8111 on PCIe C8 (`nv-kernel-module-r8168`) | ✅ driver binds (`eth0`); boot is 27 s (was 5 min waiting for the network). Link with a cable on port 1 not yet tested |
 | NVMe (PCIe C4) | ✅ |
 | USB-C | ✅ default role `device`. Switch with `echo host > /sys/class/usb_role/usb2-0-role-switch/role` |
-| RTC MCP7940 (`rtc-ds1307`) | ✅ driver bound. Keeping time needs the coin cell (not fitted from the factory) |
+| RTC MCP7940 (`rtc-ds1307`, `/dev/rtc2`) | ⚠️ driver bound, but the time is invalid until it has been set once (`hwclock -w`). Keeping time needs the coin cell (not fitted from the factory) |
 | CAN (`mttcan`) | ✅ interface present |
 | GPU (`nvgpu`) and Docker `nvidia` runtime | ✅ present. CUDA workloads not tested yet |
-| IMU ICM-42670-P (I2C1 0x69), ATSHA204A (I2C1 0x64) | ⏳ no device-tree nodes yet |
-| GMSL2 MAX96724 (CAM_I2C 0x27) | ⏳ no camera driver or device tree |
+| IMU ICM-42670-P (I2C1 0x69) | ✅ answers, WHO_AM_I `0x67`. ⏳ no device-tree node, so no driver bound |
+| ATSHA204A (I2C1 0x64) | ✅ answers. ⏳ no device-tree node, so no driver bound |
+| GMSL2 MAX96724 (CAM_I2C = i2c-2, 0x27) | ✅ answers, ID `0xA2`, PoC on at 12 V (PCB Arts defaults). ⏳ no camera driver or device tree |
 | Fan control, LAN743X EEPROM MAC setup (PCB Arts first-boot scripts) | ⏳ not ported |
 | OP-TEE | ⚠️ `optee` cannot register with `arm_ffa` on this R39 build |
 
